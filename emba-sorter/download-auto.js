@@ -5,7 +5,7 @@
 // codes in DONE. A small box at the top-right shows progress and has a Stop button.
 (() => {
   const GAP = 60;                                                    // seconds between readings (slow internet: keep 60+)
-  const DONE = ['620066', 'F1407E', 'HK1164', 'H07GYQ', '818077'];   // already downloaded
+  const DONE = ['F1407E', 'HK1164', '620117', 'HR41A', 'H07GYQ', '818077'];   // already filed (checklist 6/31)
   const seen = new Set();
   const items = [...document.querySelectorAll('a[href*="hbsp.harvard.edu/tu/"]')]
     .filter(a => !seen.has(a.href) && seen.add(a.href))
