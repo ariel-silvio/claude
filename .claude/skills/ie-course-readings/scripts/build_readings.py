@@ -16,7 +16,7 @@ often long or in capitals.
 import json, re, subprocess, sys, unicodedata
 from urllib.parse import urlparse
 
-TYPES = {'W.P.': 'OPT', 'R.A.': 'RA', 'P.C.': 'PC', 'T.N.': 'TN', 'PRACTICAL CASE': 'PC',
+TYPES = {'W.P.': 'OPT', 'B.C.': 'BC', 'R.A.': 'RA', 'P.C.': 'PC', 'T.N.': 'TN', 'PRACTICAL CASE': 'PC',
          'TECHNICAL NOTE': 'TN', 'ARTICLE': 'RA', 'BOOK CHAPTER': 'BC', 'CASE': 'PC',
          'MULTIMEDIA': 'MM', 'VIDEO': 'MM', 'EXERCISE': 'EX', 'SIMULATION': 'SIM'}
 START = re.compile(r'^\s*([A-Z]\.[A-Z]\.|[A-Z][A-Za-z]+(?: [A-Za-z]+){0,2})\s*:\s*\S')
@@ -34,7 +34,7 @@ def ascii_text(s):
 def tidy(title):
     title = ascii_text(title).strip()
     title = re.sub(r'\s*:\s*', ' - ', title)          # ':' is not allowed in Windows names
-    title = title.replace('?', '').replace('/', '-').replace('|', '-')
+    title = title.replace('?', '').replace('"', '').replace('/', '-').replace('|', '-')
     if title.isupper():
         title = title.title()
     return re.sub(r'\s+', ' ', title).strip(' -')
@@ -56,16 +56,20 @@ def parse_pdf(path):
             cur = int(m.group(1))
             sessions[cur] = ''
             # heading = first all-caps line after the header that isn't a topics block
+            first = ''
             for j in range(i + 1, min(i + 25, len(lines))):
                 s = lines[j].strip()
                 if not s or s.lower().startswith('sustainability') or s.startswith('-'):
                     continue
                 if SESSION.match(s):
                     break
+                if not first and len(s) < 60 and not START.match(s):
+                    first = s                          # fallback: short first line ("Corporate Strategy")
                 if s.isupper() and len(s) > 6:
                     nxt = lines[j + 1].strip() if j + 1 < len(lines) else ''
                     sessions[cur] = s + (' ' + nxt if nxt.isupper() and not SESSION.match(nxt) else '')
                     break
+            sessions[cur] = sessions[cur] or first
             i += 1
             continue
         # material lines can wrap; join up to 3 lines until "(CODE-...-ENG)" or "(N/C)" closes it
@@ -130,7 +134,19 @@ def add_links(items, links):
 def main():
     sessions, items = parse_pdf(sys.argv[1])
     links = json.load(open(sys.argv[2], encoding='utf-8')) if len(sys.argv) > 2 else []
-    items = add_links(items, links)
+    uniq, seen = [], {}
+    for r in items:                                    # same book listed in several sessions: keep the first
+        k = norm(r['Title'])
+        if k in seen:
+            seen[k]['Also'].append(r['Session'])
+            continue
+        r['Also'] = []
+        seen[k] = r
+        uniq.append(r)
+    for r in uniq:
+        if r['Also']:
+            print(f"note: '{r['Title']}' is also listed in sessions {r['Also']}; filed under S{r['Session']:02d}", file=sys.stderr)
+    items = add_links(uniq, links)
     items.sort(key=lambda r: r['Session'])
     print('Session|Folder|Type|Code|Title')
     for r in items:
