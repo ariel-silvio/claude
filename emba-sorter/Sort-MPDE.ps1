@@ -10,7 +10,8 @@
     3. It shows what it will move, asks Y/N, then moves and renames.
        Re-run any time; it only touches new matching files.
 
-  A file is matched by (1) the HBP product code in its name, e.g. 620066,
+  A file is matched by (0) the Harvard download address Windows keeps with
+  each downloaded file, (1) the HBP product code in its name, e.g. 620066,
   (2) the reading title in its name, or (3) the title inside the PDF metadata.
   Files that match nothing are left untouched.
 #>
@@ -47,6 +48,12 @@ Session|Folder|Type|Code|Title
 8|S08 - 21st Century Work Organization|RA|H082JA|The Challenges of Becoming a Less Hierarchical Company
 10|S10 - Difficult Decisions on People|TN|419039|Note on Managing Workforce Reductions
 10|S10 - Difficult Decisions on People|PC|HRO010220|Rogers Stirk Harbour and Partners
+1|S01 - The Era of Human Capital|OPT|McKinsey|The CEO's Guide to Competing Through HR
+4|S04 - Compensation|LIB|9860951596|Compensation and Performance - A Review and Recommendations for the Future
+4|S04 - Compensation|LIB|5374564411|Promise and Peril in Implementing Pay-for-Performance
+5|S05 - Performance Management|LIB|5745726069|Behind the Mask - The Politics of Employee Appraisal
+6|S06 - Diversity in Tech Jobs|LIB|7547961585|Getting Results with Talent Analytics
+10|S10 - Difficult Decisions on People|OPT|HBSWK|Cut Payroll Costs with Transparency, Fairness, and Compassion
 '@ | ConvertFrom-Csv -Delimiter '|'
 
 function Norm([string]$s) { ($s.ToLower() -replace '[^a-z0-9]', '') }
@@ -60,6 +67,12 @@ foreach ($r in $readings) {
 function Find-Reading($file) {
   $name = $file.BaseName
   $nname = Norm $name
+  try {                                             # 0) download URL Windows/Edge saved with the file
+    $zone = Get-Content -LiteralPath $file.FullName -Stream Zone.Identifier -ErrorAction Stop | Out-String
+    foreach ($r in $readings) {
+      if ($zone -match ('(?i)/items/' + [regex]::Escape($r.Code) + '-')) { return $r }
+    }
+  } catch { }
   foreach ($r in $readings) {                       # 1) product code
     if ($name -match ('(?i)(^|[^a-z0-9])' + [regex]::Escape($r.Code) + '([^a-z0-9]|$)')) { return $r }
   }
