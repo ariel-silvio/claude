@@ -5,7 +5,8 @@ description: Download and organise all readings of an IE Business School EMBA co
 
 # IE course readings: download, rename, file, check
 
-Proven on "Managing People in Digital Era" (31 readings, 21 auto-downloaded). The
+Proven on "Managing People in Digital Era" (31 readings, 21 auto-downloaded) and
+"Strategy Design" (15 readings, all 11 coursepack PDFs filed on the first run). The
 user is on a Windows company laptop with Edge, Documents in OneDrive, and PowerShell
 script execution blocked. Claude runs in the cloud and cannot reach IE, Harvard or
 the laptop: the user runs the browser and PowerShell steps; Claude builds the files.
